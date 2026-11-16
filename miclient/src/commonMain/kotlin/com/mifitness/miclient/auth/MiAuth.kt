@@ -703,6 +703,14 @@ class MiAuth(
                 rePassTokenHeader = response.headers["re-pass-token"]
                     ?: response.headers["Re-Pass-Token"],
             )
+        if (effectivePass == oldPass) {
+            val jarPass = cookieStorage.get(Url("https://account.xiaomi.com/"))
+                .firstOrNull { it.name == "passToken" }?.value
+                ?.takeIf { it.isNotBlank() && it != oldPass }
+            if (jarPass != null) {
+                effectivePass = jarPass
+            }
+        }
         if (effectivePass != oldPass) {
             updatePassTokenCookie(cookieStorage, effectivePass)
         }

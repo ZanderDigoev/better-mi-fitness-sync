@@ -494,6 +494,11 @@ class LoginViewModel(
             }
             return
         }
+        val email = uiState.value.email.trim()
+        val password = uiState.value.password
+        if (email.isNotBlank() && password.isNotBlank()) {
+            credentialsStore.saveUserAuth(email, password)
+        }
         sessionManager.activate(effective)
         credentialsStore.saveCredentials(effective)
         // Pick the health cloud shard that actually holds the newest samples.

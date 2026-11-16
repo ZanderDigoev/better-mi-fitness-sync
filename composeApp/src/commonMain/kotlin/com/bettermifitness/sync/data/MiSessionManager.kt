@@ -52,12 +52,36 @@ class MiSessionManager(
      */
     override suspend fun ensureActive(): Boolean {
         if (isActive) return true
-        val creds = credentialsStore.loadCredentials() ?: return false
-        if (creds.serviceToken.isBlank() || creds.userId.isBlank() || creds.ssecurity.isBlank()) {
-            return false
+        val creds = credentialsStore.loadCredentials()
+        if (creds == null || creds.serviceToken.isBlank() || creds.userId.isBlank() || creds.ssecurity.isBlank()) {
+            return trySilentLogin()
         }
         activate(creds)
         return true
+    }
+
+    private suspend fun trySilentLogin(): Boolean {
+        val savedAuth = credentialsStore.loadUserAuth() ?: return false
+        val deviceId = credentialsStore.ensureDeviceId()
+        return try {
+            val result = miAuth.login(
+                email = savedAuth.email,
+                password = savedAuth.password,
+                deviceId = deviceId,
+            )
+            if (result is com.mifitness.miclient.auth.LoginResult.Success) {
+                credentialsStore.saveCredentials(result.credentials)
+                val effective = credentialsStore.loadCredentials() ?: result.credentials
+                activate(effective)
+                true
+            } else {
+                false
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            false
+        }
     }
 
     /**
@@ -99,7 +123,29 @@ class MiSessionManager(
                 MiAuthException.Kind.MissingPassToken,
                 MiAuthException.Kind.MissingDeviceId,
                 MiAuthException.Kind.InvalidCredential,
-                -> SessionRefreshResult.NeedsReLogin(e.message ?: "Sign in again")
+                -> {
+                    val savedAuth = credentialsStore.loadUserAuth()
+                    if (savedAuth != null && savedAuth.email.isNotBlank() && savedAuth.password.isNotBlank()) {
+                        try {
+                            val reloginResult = miAuth.login(
+                                email = savedAuth.email,
+                                password = savedAuth.password,
+                                deviceId = current.deviceId,
+                            )
+                            if (reloginResult is com.mifitness.miclient.auth.LoginResult.Success) {
+                                credentialsStore.saveCredentials(reloginResult.credentials)
+                                val effective = credentialsStore.loadCredentials() ?: reloginResult.credentials
+                                activate(effective)
+                                return@withLock SessionRefreshResult.Success
+                            }
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (_: Exception) {
+                            // Silent relogin failed (e.g. password changed); fall through to prompt user
+                        }
+                    }
+                    SessionRefreshResult.NeedsReLogin(e.message ?: "Sign in again")
+                }
                 MiAuthException.Kind.NeedsVerification ->
                     SessionRefreshResult.NeedsVerification(
                         reason = e.message ?: "Xiaomi requires re-verification",

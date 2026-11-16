@@ -129,6 +129,10 @@ private suspend fun restoreAuth(
 ): AuthBootstrap {
     if (sessionManager.isActive) return AuthBootstrap.LoggedIn
 
+    if (sessionManager.ensureActive()) {
+        return AuthBootstrap.LoggedIn
+    }
+
     val credentials = tokenStore.loadCredentials()
     return if (credentials != null &&
         credentials.serviceToken.isNotBlank() &&

@@ -135,6 +135,29 @@ class CredentialsStore(
         }
     }
 
+    override suspend fun saveUserAuth(email: String, password: String) {
+        if (email.isBlank() || password.isBlank()) return
+        dataStore.edit { preferences ->
+            preferences[SAVED_EMAIL_KEY] = email
+            preferences[SAVED_PASSWORD_KEY] = password
+        }
+    }
+
+    override suspend fun loadUserAuth(): UserAuth? {
+        val prefs = dataStore.data.first()
+        val email = prefs[SAVED_EMAIL_KEY] ?: return null
+        val password = prefs[SAVED_PASSWORD_KEY] ?: return null
+        if (email.isBlank() || password.isBlank()) return null
+        return UserAuth(email = email, password = password)
+    }
+
+    override suspend fun clearUserAuth() {
+        dataStore.edit { preferences ->
+            preferences.remove(SAVED_EMAIL_KEY)
+            preferences.remove(SAVED_PASSWORD_KEY)
+        }
+    }
+
     /** Clears session credentials but keeps the stable device identity. */
     suspend fun clearCredentials() {
         dataStore.edit { preferences ->
@@ -149,6 +172,8 @@ class CredentialsStore(
             preferences.remove(PASS_TOKEN_KEY)
             preferences.remove(C_USER_ID_KEY)
             preferences.remove(SESSION_REFRESHED_AT_KEY)
+            preferences.remove(SAVED_EMAIL_KEY)
+            preferences.remove(SAVED_PASSWORD_KEY)
         }
     }
 
@@ -165,5 +190,7 @@ class CredentialsStore(
         private val DEVICE_ID_KEY = stringPreferencesKey("device_id")
         private val C_USER_ID_KEY = stringPreferencesKey("c_user_id")
         private val SESSION_REFRESHED_AT_KEY = stringPreferencesKey("session_refreshed_at")
+        private val SAVED_EMAIL_KEY = stringPreferencesKey("saved_email")
+        private val SAVED_PASSWORD_KEY = stringPreferencesKey("saved_password")
     }
 }

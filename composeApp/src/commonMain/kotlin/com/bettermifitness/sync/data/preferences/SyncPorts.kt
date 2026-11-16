@@ -25,7 +25,15 @@ interface CredentialsPort {
 
     /** Same as [loadDeviceId] but generates and persists when missing. */
     suspend fun ensureDeviceId(): String = loadDeviceId()
+
+    /** Stored user credentials for silent background re-login when passToken expires. */
+    suspend fun loadUserAuth(): UserAuth? = null
+    suspend fun saveUserAuth(email: String, password: String) = Unit
+    suspend fun clearUserAuth() = Unit
 }
+
+/** Stored user credentials for silent background re-login. */
+data class UserAuth(val email: String, val password: String)
 
 /** ISP: sync settings + last-run outcome persistence. */
 interface SyncPreferencesPort {
