@@ -633,7 +633,11 @@ actual class HealthWriter(private val context: Context) : HealthStore {
                         ),
                     ),
                 )
-                fatResponse.records.firstOrNull()?.percentage?.value
+                fatResponse.records
+                    .filter { !isSelfWritten(it.metadata.clientRecordId, it.metadata.dataOrigin.packageName) }
+                    .minByOrNull { kotlin.math.abs(it.time.epochSecond - r.time.epochSecond) }
+                    ?.percentage?.value
+                    ?.let { kotlin.math.round(it * 10.0) / 10.0 }
             } catch (_: Exception) {
                 null
             }
@@ -648,7 +652,11 @@ actual class HealthWriter(private val context: Context) : HealthStore {
                         ),
                     ),
                 )
-                boneResponse.records.firstOrNull()?.mass?.inKilograms
+                boneResponse.records
+                    .filter { !isSelfWritten(it.metadata.clientRecordId, it.metadata.dataOrigin.packageName) }
+                    .minByOrNull { kotlin.math.abs(it.time.epochSecond - r.time.epochSecond) }
+                    ?.mass?.inKilograms
+                    ?.let { kotlin.math.round(it * 100.0) / 100.0 }
             } catch (_: Exception) {
                 null
             }
@@ -663,7 +671,11 @@ actual class HealthWriter(private val context: Context) : HealthStore {
                         ),
                     ),
                 )
-                muscleResponse.records.firstOrNull()?.mass?.inKilograms
+                muscleResponse.records
+                    .filter { !isSelfWritten(it.metadata.clientRecordId, it.metadata.dataOrigin.packageName) }
+                    .minByOrNull { kotlin.math.abs(it.time.epochSecond - r.time.epochSecond) }
+                    ?.mass?.inKilograms
+                    ?.let { kotlin.math.round(it * 10.0) / 10.0 }
             } catch (_: Exception) {
                 null
             }
@@ -678,7 +690,11 @@ actual class HealthWriter(private val context: Context) : HealthStore {
                         ),
                     ),
                 )
-                bmrResponse.records.firstOrNull()?.basalMetabolicRate?.inKilocaloriesPerDay
+                bmrResponse.records
+                    .filter { !isSelfWritten(it.metadata.clientRecordId, it.metadata.dataOrigin.packageName) }
+                    .minByOrNull { kotlin.math.abs(it.time.epochSecond - r.time.epochSecond) }
+                    ?.basalMetabolicRate?.inKilocaloriesPerDay
+                    ?.let { kotlin.math.round(it) }
             } catch (_: Exception) {
                 null
             }
@@ -693,8 +709,13 @@ actual class HealthWriter(private val context: Context) : HealthStore {
                         ),
                     ),
                 )
-                val waterKg = waterResponse.records.firstOrNull()?.mass?.inKilograms
-                if (waterKg != null && kg > 0) (waterKg / kg) * 100.0 else null
+                val waterKg = waterResponse.records
+                    .filter { !isSelfWritten(it.metadata.clientRecordId, it.metadata.dataOrigin.packageName) }
+                    .minByOrNull { kotlin.math.abs(it.time.epochSecond - r.time.epochSecond) }
+                    ?.mass?.inKilograms
+                if (waterKg != null && kg > 0) {
+                    kotlin.math.round((waterKg / kg) * 1000.0) / 10.0
+                } else null
             } catch (_: Exception) {
                 null
             }

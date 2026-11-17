@@ -288,7 +288,10 @@ class MiDirectApi(private val client: MiDataClient) {
             measurement.muscleMassKg?.let { append(",\"muscle_rate\":$it") }
             measurement.boneMassKg?.let { append(",\"bone_mass\":$it") }
             measurement.basalMetabolismKcal?.let { append(",\"basal_metabolism\":$it") }
-            measurement.waterPercent?.let { append(",\"water_rate\":$it") }
+            measurement.waterPercent?.let {
+                append(",\"water_rate\":$it")
+                append(",\"moisture_rate\":$it")
+            }
             append("}")
         }
         val dataList = listOf(

@@ -465,8 +465,29 @@ class HealthRepository(
             val hc = hcLatest!!
             val deltaSec = hc.timestamp - mi.timestamp
             val weightDiff = kotlin.math.abs(hc.weightKg - mi.weightKg)
-            // Same instant and effectively same weight -> already synced
-            if (kotlin.math.abs(deltaSec) < 60 && weightDiff < 0.05) return@runMetric 0
+            // Same instant and effectively same weight -> already synced, unless one side has richer metrics
+            if (kotlin.math.abs(deltaSec) < 60 && weightDiff < 0.05) {
+                val hcHasExtra = (hc.waterPercent != null && mi.waterPercent == null) ||
+                    (hc.bodyFatPercent != null && mi.bodyFatPercent == null) ||
+                    (hc.muscleMassKg != null && mi.muscleMassKg == null) ||
+                    (hc.boneMassKg != null && mi.boneMassKg == null) ||
+                    (hc.basalMetabolismKcal != null && mi.basalMetabolismKcal == null)
+                if (hcHasExtra) {
+                    val ok = api.uploadWeight(hc)
+                    if (!ok) throw IllegalStateException("Mi weight upload failed")
+                    return@runMetric 1
+                }
+                val miHasExtra = (mi.waterPercent != null && hc.waterPercent == null) ||
+                    (mi.bodyFatPercent != null && hc.bodyFatPercent == null) ||
+                    (mi.muscleMassKg != null && hc.muscleMassKg == null) ||
+                    (mi.boneMassKg != null && hc.boneMassKg == null) ||
+                    (mi.basalMetabolismKcal != null && hc.basalMetabolismKcal == null)
+                if (miHasExtra) {
+                    healthWriter.writeWeight(listOf(mi))
+                    return@runMetric 1
+                }
+                return@runMetric 0
+            }
             if (deltaSec > 60) {
                 // HC newer -> Mi (preserve timestamp)
                 val ok = api.uploadWeight(hc)
