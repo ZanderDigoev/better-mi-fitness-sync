@@ -438,7 +438,7 @@ actual class HealthWriter(private val context: Context) : HealthStore {
             BodyWaterMassRecord(
                 time = time,
                 zoneOffset = ZoneOffsetResolver.fromMiOrSystem(m.tzIn15Min, time),
-                bodyWaterMass = Mass.kilograms(waterKg),
+                mass = Mass.kilograms(waterKg),
                 metadata = Metadata.manualEntry(
                     clientRecordId = HealthRecordIds.bodyWater(m.timestamp),
                     clientRecordVersion = HealthRecordIds.version(m.timestamp, waterKg, m.tzIn15Min),
@@ -693,7 +693,7 @@ actual class HealthWriter(private val context: Context) : HealthStore {
                         ),
                     ),
                 )
-                val waterKg = waterResponse.records.firstOrNull()?.bodyWaterMass?.inKilograms
+                val waterKg = waterResponse.records.firstOrNull()?.mass?.inKilograms
                 if (waterKg != null && kg > 0) (waterKg / kg) * 100.0 else null
             } catch (_: Exception) {
                 null
