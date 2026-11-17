@@ -284,8 +284,10 @@ class MiDirectApi(private val client: MiDataClient) {
             append("\"weight\":${measurement.weightKg}")
             append(",\"time\":${measurement.timestamp}")
             tzUnits?.let { append(",\"timezone\":$it") }
-            // Body-fat is not uploaded via weight-only sync (Mi has no standalone body-fat input);
-            // keep payload minimal weight + time + timezone.
+            measurement.bodyFatPercent?.let { append(",\"body_fat_rate\":$it") }
+            measurement.muscleMassKg?.let { append(",\"muscle_rate\":$it") }
+            measurement.boneMassKg?.let { append(",\"bone_mass\":$it") }
+            measurement.basalMetabolismKcal?.let { append(",\"basal_metabolism\":$it") }
             append("}")
         }
         val dataList = listOf(

@@ -95,6 +95,7 @@ actual class HealthWriter(private val context: Context) : HealthStore {
 
     private fun availableReadPermissions(): Set<String> = setOf(
         HealthPermission.getReadPermission(WeightRecord::class),
+        HealthPermission.getReadPermission(BodyFatRecord::class),
     )
 
     private fun availablePermissions(): Set<String> =
@@ -487,13 +488,14 @@ actual class HealthWriter(private val context: Context) : HealthStore {
     actual override suspend fun readLatestWeight(): WeightMeasurement? {
         if (!isAvailable()) return null
         return try {
+            val windowStart = Instant.now().minus(java.time.Duration.ofDays(28))
             var latest: WeightRecord? = null
             var pageToken: String? = null
             do {
                 val response = client.readRecords(
                     ReadRecordsRequest(
                         WeightRecord::class,
-                        timeRangeFilter = TimeRangeFilter.between(Instant.EPOCH, Instant.now()),
+                        timeRangeFilter = TimeRangeFilter.between(windowStart, Instant.now()),
                         pageToken = pageToken,
                     ),
                 )
@@ -508,10 +510,26 @@ actual class HealthWriter(private val context: Context) : HealthStore {
             // HealthDataNormalizer will filter implausible, but double-check
             val kg = r.weight.inKilograms
             if (kg !in 1.0..500.0) return null
+
+            val fatPercent = try {
+                val fatResponse = client.readRecords(
+                    ReadRecordsRequest(
+                        BodyFatRecord::class,
+                        timeRangeFilter = TimeRangeFilter.between(
+                            r.time.minusSeconds(300),
+                            r.time.plusSeconds(300),
+                        ),
+                    ),
+                )
+                fatResponse.records.firstOrNull()?.percentage?.value
+            } catch (_: Exception) {
+                null
+            }
+
             WeightMeasurement(
                 timestamp = ts,
                 weightKg = kg,
-                bodyFatPercent = null,
+                bodyFatPercent = fatPercent,
                 tzIn15Min = zoneOffsetToMiUnits(r.zoneOffset),
             ).let { listOf(it) }.let { HealthDataNormalizer.normalizeWeight(it).firstOrNull() }
         } catch (_: Exception) {
