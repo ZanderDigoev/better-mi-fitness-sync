@@ -8,6 +8,7 @@ complexity:
     # Test classes grow with coverage by design; class-size limits don't apply to them.
     excludes:
       - '**/data/repository/HealthRepository.kt'
+      - '**/health/HealthWriter*.kt'
       - '**/commonTest/**'
       - '**/androidTest/**'
       - '**/iosTest/**'

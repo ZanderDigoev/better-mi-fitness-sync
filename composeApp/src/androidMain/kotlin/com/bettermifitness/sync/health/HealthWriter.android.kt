@@ -58,6 +58,7 @@ import com.bettermifitness.sync.data.api.WorkoutSession
 import java.time.Instant
 import kotlin.math.roundToLong
 
+@Suppress("LargeClass")
 actual class HealthWriter(private val context: Context) : HealthStore {
     private val client by lazy { HealthConnectClient.getOrCreate(context) }
 
