@@ -221,6 +221,7 @@ object MiFitnessParsers {
                     muscleMassKg = o.doubleField("muscle_rate")?.takeIf { it in 1.0..200.0 },
                     boneMassKg = o.doubleField("bone_mass"),
                     basalMetabolismKcal = o.doubleField("basal_metabolism"),
+                    waterPercent = o.doubleField("water_rate") ?: o.doubleField("moisture_rate"),
                     tzIn15Min = o.miTimezoneOrNull(),
                 )
             } catch (_: Exception) {

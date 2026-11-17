@@ -6,15 +6,21 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.BasalMetabolicRateRecord
 import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.BodyFatRecord
 import androidx.health.connect.client.records.BodyTemperatureRecord
+import androidx.health.connect.client.records.BodyWaterMassRecord
+import androidx.health.connect.client.records.BoneMassRecord
 import androidx.health.connect.client.records.CyclingPedalingCadenceRecord
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ElevationGainedRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
+import androidx.health.connect.client.records.FloorsClimbedRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
+import androidx.health.connect.client.records.HydrationRecord
+import androidx.health.connect.client.records.LeanBodyMassRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
 import androidx.health.connect.client.records.PowerRecord
 import androidx.health.connect.client.records.RestingHeartRateRecord
@@ -24,6 +30,7 @@ import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.SpeedRecord
 import androidx.health.connect.client.records.StepsCadenceRecord
 import androidx.health.connect.client.records.StepsRecord as HcStepsRecord
+import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.records.Vo2MaxRecord
 import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.metadata.Metadata
@@ -66,9 +73,15 @@ actual class HealthWriter(private val context: Context) : HealthStore {
             HealthPermission.getWritePermission(HcStepsRecord::class),
             HealthPermission.getWritePermission(DistanceRecord::class),
             HealthPermission.getWritePermission(ActiveCaloriesBurnedRecord::class),
+            HealthPermission.getWritePermission(TotalCaloriesBurnedRecord::class),
             HealthPermission.getWritePermission(OxygenSaturationRecord::class),
             HealthPermission.getWritePermission(WeightRecord::class),
             HealthPermission.getWritePermission(BodyFatRecord::class),
+            HealthPermission.getWritePermission(BoneMassRecord::class),
+            HealthPermission.getWritePermission(BodyWaterMassRecord::class),
+            HealthPermission.getWritePermission(LeanBodyMassRecord::class),
+            HealthPermission.getWritePermission(BasalMetabolicRateRecord::class),
+            HealthPermission.getWritePermission(HydrationRecord::class),
             HealthPermission.getWritePermission(ExerciseSessionRecord::class),
             HealthPermission.PERMISSION_WRITE_EXERCISE_ROUTE,
             HealthPermission.getWritePermission(ElevationGainedRecord::class),
@@ -76,6 +89,7 @@ actual class HealthWriter(private val context: Context) : HealthStore {
             HealthPermission.getWritePermission(StepsCadenceRecord::class),
             HealthPermission.getWritePermission(CyclingPedalingCadenceRecord::class),
             HealthPermission.getWritePermission(PowerRecord::class),
+            HealthPermission.getWritePermission(FloorsClimbedRecord::class),
             HealthPermission.getWritePermission(BloodPressureRecord::class),
             HealthPermission.getWritePermission(BodyTemperatureRecord::class),
             HealthPermission.getWritePermission(Vo2MaxRecord::class),
@@ -93,10 +107,46 @@ actual class HealthWriter(private val context: Context) : HealthStore {
         return perms
     }
 
-    private fun availableReadPermissions(): Set<String> = setOf(
-        HealthPermission.getReadPermission(WeightRecord::class),
-        HealthPermission.getReadPermission(BodyFatRecord::class),
-    )
+    private fun availableReadPermissions(): Set<String> {
+        val perms = linkedSetOf(
+            HealthPermission.getReadPermission(WeightRecord::class),
+            HealthPermission.getReadPermission(BodyFatRecord::class),
+            HealthPermission.getReadPermission(BoneMassRecord::class),
+            HealthPermission.getReadPermission(BodyWaterMassRecord::class),
+            HealthPermission.getReadPermission(LeanBodyMassRecord::class),
+            HealthPermission.getReadPermission(BasalMetabolicRateRecord::class),
+            HealthPermission.getReadPermission(HydrationRecord::class),
+            HealthPermission.getReadPermission(HeartRateRecord::class),
+            HealthPermission.getReadPermission(RestingHeartRateRecord::class),
+            HealthPermission.getReadPermission(SleepSessionRecord::class),
+            HealthPermission.getReadPermission(HcStepsRecord::class),
+            HealthPermission.getReadPermission(DistanceRecord::class),
+            HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
+            HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class),
+            HealthPermission.getReadPermission(OxygenSaturationRecord::class),
+            HealthPermission.getReadPermission(ExerciseSessionRecord::class),
+            HealthPermission.getReadPermission(ElevationGainedRecord::class),
+            HealthPermission.getReadPermission(SpeedRecord::class),
+            HealthPermission.getReadPermission(StepsCadenceRecord::class),
+            HealthPermission.getReadPermission(CyclingPedalingCadenceRecord::class),
+            HealthPermission.getReadPermission(PowerRecord::class),
+            HealthPermission.getReadPermission(FloorsClimbedRecord::class),
+            HealthPermission.getReadPermission(BloodPressureRecord::class),
+            HealthPermission.getReadPermission(BodyTemperatureRecord::class),
+            HealthPermission.getReadPermission(Vo2MaxRecord::class),
+            HealthPermission.getReadPermission(HeartRateVariabilityRmssdRecord::class),
+        )
+        val skinOk = try {
+            client.features.getFeatureStatus(HealthConnectFeatures.FEATURE_SKIN_TEMPERATURE) ==
+                HealthConnectFeatures.FEATURE_STATUS_AVAILABLE
+        } catch (_: Exception) {
+            false
+        }
+        if (skinOk) {
+            perms += HealthPermission.getReadPermission(SkinTemperatureRecord::class)
+        }
+        return perms
+    }
 
     private fun availablePermissions(): Set<String> =
         availableWritePermissions() + availableReadPermissions()
@@ -334,6 +384,67 @@ actual class HealthWriter(private val context: Context) : HealthStore {
             )
         }
         insertChunked(fatRecords)
+
+        val boneRecords = clean.mapNotNull { m ->
+            val bone = m.boneMassKg ?: return@mapNotNull null
+            val time = Instant.ofEpochSecond(m.timestamp)
+            BoneMassRecord(
+                time = time,
+                zoneOffset = ZoneOffsetResolver.fromMiOrSystem(m.tzIn15Min, time),
+                mass = Mass.kilograms(bone),
+                metadata = Metadata.manualEntry(
+                    clientRecordId = HealthRecordIds.boneMass(m.timestamp),
+                    clientRecordVersion = HealthRecordIds.version(m.timestamp, bone, m.tzIn15Min),
+                ),
+            )
+        }
+        insertChunked(boneRecords)
+
+        val muscleRecords = clean.mapNotNull { m ->
+            val muscle = m.muscleMassKg ?: return@mapNotNull null
+            val time = Instant.ofEpochSecond(m.timestamp)
+            LeanBodyMassRecord(
+                time = time,
+                zoneOffset = ZoneOffsetResolver.fromMiOrSystem(m.tzIn15Min, time),
+                mass = Mass.kilograms(muscle),
+                metadata = Metadata.manualEntry(
+                    clientRecordId = HealthRecordIds.leanBodyMass(m.timestamp),
+                    clientRecordVersion = HealthRecordIds.version(m.timestamp, muscle, m.tzIn15Min),
+                ),
+            )
+        }
+        insertChunked(muscleRecords)
+
+        val bmrRecords = clean.mapNotNull { m ->
+            val bmr = m.basalMetabolismKcal ?: return@mapNotNull null
+            val time = Instant.ofEpochSecond(m.timestamp)
+            BasalMetabolicRateRecord(
+                time = time,
+                zoneOffset = ZoneOffsetResolver.fromMiOrSystem(m.tzIn15Min, time),
+                basalMetabolicRate = androidx.health.connect.client.units.Power.kilocaloriesPerDay(bmr),
+                metadata = Metadata.manualEntry(
+                    clientRecordId = HealthRecordIds.basalMetabolism(m.timestamp),
+                    clientRecordVersion = HealthRecordIds.version(m.timestamp, bmr, m.tzIn15Min),
+                ),
+            )
+        }
+        insertChunked(bmrRecords)
+
+        val waterRecords = clean.mapNotNull { m ->
+            val waterPercent = m.waterPercent ?: return@mapNotNull null
+            val waterKg = (waterPercent / 100.0) * m.weightKg
+            val time = Instant.ofEpochSecond(m.timestamp)
+            BodyWaterMassRecord(
+                time = time,
+                zoneOffset = ZoneOffsetResolver.fromMiOrSystem(m.tzIn15Min, time),
+                bodyWaterMass = Mass.kilograms(waterKg),
+                metadata = Metadata.manualEntry(
+                    clientRecordId = HealthRecordIds.bodyWater(m.timestamp),
+                    clientRecordVersion = HealthRecordIds.version(m.timestamp, waterKg, m.tzIn15Min),
+                ),
+            )
+        }
+        insertChunked(waterRecords)
     }
 
     actual override suspend fun writeWorkouts(sessions: List<WorkoutSession>) {
@@ -526,10 +637,75 @@ actual class HealthWriter(private val context: Context) : HealthStore {
                 null
             }
 
+            val boneMass = try {
+                val boneResponse = client.readRecords(
+                    ReadRecordsRequest(
+                        BoneMassRecord::class,
+                        timeRangeFilter = TimeRangeFilter.between(
+                            r.time.minusSeconds(300),
+                            r.time.plusSeconds(300),
+                        ),
+                    ),
+                )
+                boneResponse.records.firstOrNull()?.mass?.inKilograms
+            } catch (_: Exception) {
+                null
+            }
+
+            val muscleMass = try {
+                val muscleResponse = client.readRecords(
+                    ReadRecordsRequest(
+                        LeanBodyMassRecord::class,
+                        timeRangeFilter = TimeRangeFilter.between(
+                            r.time.minusSeconds(300),
+                            r.time.plusSeconds(300),
+                        ),
+                    ),
+                )
+                muscleResponse.records.firstOrNull()?.mass?.inKilograms
+            } catch (_: Exception) {
+                null
+            }
+
+            val bmr = try {
+                val bmrResponse = client.readRecords(
+                    ReadRecordsRequest(
+                        BasalMetabolicRateRecord::class,
+                        timeRangeFilter = TimeRangeFilter.between(
+                            r.time.minusSeconds(300),
+                            r.time.plusSeconds(300),
+                        ),
+                    ),
+                )
+                bmrResponse.records.firstOrNull()?.basalMetabolicRate?.inKilocaloriesPerDay
+            } catch (_: Exception) {
+                null
+            }
+
+            val waterPercent = try {
+                val waterResponse = client.readRecords(
+                    ReadRecordsRequest(
+                        BodyWaterMassRecord::class,
+                        timeRangeFilter = TimeRangeFilter.between(
+                            r.time.minusSeconds(300),
+                            r.time.plusSeconds(300),
+                        ),
+                    ),
+                )
+                val waterKg = waterResponse.records.firstOrNull()?.bodyWaterMass?.inKilograms
+                if (waterKg != null && kg > 0) (waterKg / kg) * 100.0 else null
+            } catch (_: Exception) {
+                null
+            }
+
             WeightMeasurement(
                 timestamp = ts,
                 weightKg = kg,
                 bodyFatPercent = fatPercent,
+                muscleMassKg = muscleMass,
+                boneMassKg = boneMass,
+                basalMetabolismKcal = bmr,
+                waterPercent = waterPercent,
                 tzIn15Min = zoneOffsetToMiUnits(r.zoneOffset),
             ).let { listOf(it) }.let { HealthDataNormalizer.normalizeWeight(it).firstOrNull() }
         } catch (_: Exception) {
@@ -544,10 +720,13 @@ actual class HealthWriter(private val context: Context) : HealthStore {
     actual override suspend fun hasWritePermissions(): Boolean {
         if (!isAvailable()) return false
         return try {
-            val needed = availablePermissions()
-            if (needed.isEmpty()) return false
             val granted = client.permissionController.getGrantedPermissions()
-            needed.all { it in granted }
+            if (granted.isEmpty()) return false
+            val core = setOf(
+                HealthPermission.getWritePermission(WeightRecord::class),
+                HealthPermission.getWritePermission(HcStepsRecord::class),
+            )
+            core.any { it in granted }
         } catch (_: Exception) {
             false
         }
@@ -561,8 +740,7 @@ actual class HealthWriter(private val context: Context) : HealthStore {
             throw Exception(L10n.text(L10n.healthNotAvailable))
         }
         val granted = launcher(needed)
-        val missing = needed - granted
-        if (missing.isNotEmpty()) {
+        if (granted.isEmpty()) {
             throw Exception(L10n.text(L10n.healthPermissionsIncomplete))
         }
     }

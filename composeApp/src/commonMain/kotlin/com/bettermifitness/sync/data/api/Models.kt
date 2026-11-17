@@ -177,6 +177,7 @@ data class WeightMeasurement(
     val muscleMassKg: Double? = null,
     val boneMassKg: Double? = null,
     val basalMetabolismKcal: Double? = null,
+    val waterPercent: Double? = null,
     /** Mi `timezone` field: offset in units of 15 minutes. */
     val tzIn15Min: Int? = null,
 )

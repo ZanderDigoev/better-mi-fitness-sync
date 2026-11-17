@@ -60,6 +60,18 @@ object HealthRecordIds {
     fun bodyFat(timestampSec: Long): String =
         "mifit-bodyfat-$timestampSec"
 
+    fun boneMass(timestampSec: Long): String =
+        "mifit-bonemass-$timestampSec"
+
+    fun bodyWater(timestampSec: Long): String =
+        "mifit-bodywater-$timestampSec"
+
+    fun leanBodyMass(timestampSec: Long): String =
+        "mifit-leanmass-$timestampSec"
+
+    fun basalMetabolism(timestampSec: Long): String =
+        "mifit-bmr-$timestampSec"
+
     fun workout(startSec: Long): String =
         "mifit-workout-$startSec"
 

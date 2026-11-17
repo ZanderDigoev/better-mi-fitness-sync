@@ -403,6 +403,7 @@ object HealthDataNormalizer {
                 muscleMassKg = m.muscleMassKg?.takeIf { it in 1.0..200.0 },
                 boneMassKg = m.boneMassKg?.takeIf { it in 0.1..50.0 },
                 basalMetabolismKcal = m.basalMetabolismKcal?.takeIf { it in 200.0..10_000.0 },
+                waterPercent = m.waterPercent?.takeIf { it in 1.0..95.0 },
                 tzIn15Min = m.tzIn15Min,
             )
         }
