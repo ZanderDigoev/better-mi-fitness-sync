@@ -607,7 +607,7 @@ actual class HealthWriter(private val context: Context) : HealthStore {
                 val response = client.readRecords(
                     ReadRecordsRequest(
                         WeightRecord::class,
-                        timeRangeFilter = TimeRangeFilter.between(windowStart, Instant.now()),
+                        timeRangeFilter = TimeRangeFilter.after(windowStart),
                         pageToken = pageToken,
                     ),
                 )
