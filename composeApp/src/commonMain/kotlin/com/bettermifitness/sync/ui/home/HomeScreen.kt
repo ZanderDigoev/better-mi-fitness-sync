@@ -116,8 +116,9 @@ fun HomeScreen(
                         when {
                             state.healthNeedsAction -> viewModel.openHealthService()
                             !canUpdate -> onSettingsClick()
+                            state.isSyncing -> onSyncClick()
                             else -> {
-                                if (!state.isSyncing) viewModel.startSyncIfIdle()
+                                viewModel.startSyncIfIdle()
                                 onSyncClick()
                             }
                         }
@@ -161,7 +162,7 @@ fun HomeScreen(
                 onSyncOptionsClick = onSettingsClick,
             )
 
-            ActivitySection(state = state)
+            ActivitySection(state = state, onClick = onSyncClick)
         }
     }
 }
@@ -421,14 +422,17 @@ private fun SetupRow(
 }
 
 @Composable
-private fun ActivitySection(state: HomeUiState) {
+private fun ActivitySection(state: HomeUiState, onClick: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         SectionLabel(L10n.string(L10n.homeActivity))
         Surface(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .clickable(onClick = onClick),
             shape = RoundedCornerShape(14.dp),
             color = MaterialTheme.colorScheme.surface,
         ) {
@@ -437,6 +441,7 @@ private fun ActivitySection(state: HomeUiState) {
                     title = L10n.string(L10n.homeLastSync),
                     value = lastSyncValue(state),
                     valueColor = lastSyncColor(state),
+                    showChevron = true,
                 )
                 HorizontalDivider(Modifier.padding(start = 14.dp))
                 FootnoteRow(
@@ -447,6 +452,7 @@ private fun ActivitySection(state: HomeUiState) {
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
+                    showChevron = true,
                 )
             }
         }
@@ -476,7 +482,12 @@ private fun backgroundValue(state: HomeUiState): String {
 }
 
 @Composable
-private fun FootnoteRow(title: String, value: String, valueColor: Color) {
+private fun FootnoteRow(
+    title: String,
+    value: String,
+    valueColor: Color,
+    showChevron: Boolean = false,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -489,13 +500,26 @@ private fun FootnoteRow(title: String, value: String, valueColor: Color) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = valueColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = valueColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (showChevron) {
+                AppIcon(
+                    AppIcons.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
     }
 }
 

@@ -384,7 +384,9 @@ actual class HealthWriter(private val context: Context) : HealthStore {
                 ),
             )
         }
-        insertChunked(fatRecords)
+        try {
+            insertChunked(fatRecords)
+        } catch (_: Exception) { }
 
         val boneRecords = clean.mapNotNull { m ->
             val bone = m.boneMassKg ?: return@mapNotNull null
@@ -399,7 +401,9 @@ actual class HealthWriter(private val context: Context) : HealthStore {
                 ),
             )
         }
-        insertChunked(boneRecords)
+        try {
+            insertChunked(boneRecords)
+        } catch (_: Exception) { }
 
         val muscleRecords = clean.mapNotNull { m ->
             val muscle = m.muscleMassKg ?: return@mapNotNull null
@@ -414,7 +418,9 @@ actual class HealthWriter(private val context: Context) : HealthStore {
                 ),
             )
         }
-        insertChunked(muscleRecords)
+        try {
+            insertChunked(muscleRecords)
+        } catch (_: Exception) { }
 
         val bmrRecords = clean.mapNotNull { m ->
             val bmr = m.basalMetabolismKcal ?: return@mapNotNull null
@@ -429,7 +435,9 @@ actual class HealthWriter(private val context: Context) : HealthStore {
                 ),
             )
         }
-        insertChunked(bmrRecords)
+        try {
+            insertChunked(bmrRecords)
+        } catch (_: Exception) { }
 
         val waterRecords = clean.mapNotNull { m ->
             val waterPercent = m.waterPercent ?: return@mapNotNull null
@@ -445,7 +453,9 @@ actual class HealthWriter(private val context: Context) : HealthStore {
                 ),
             )
         }
-        insertChunked(waterRecords)
+        try {
+            insertChunked(waterRecords)
+        } catch (_: Exception) { }
     }
 
     actual override suspend fun writeWorkouts(sessions: List<WorkoutSession>) {

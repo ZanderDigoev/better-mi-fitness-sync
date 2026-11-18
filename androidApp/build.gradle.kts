@@ -10,8 +10,8 @@ fun appVersionProp(name: String, envKey: String, default: String): String =
         ?: System.getenv(envKey)?.takeIf { it.isNotBlank() }
         ?: default
 
-val appVersionName: String = appVersionProp("versionName", "VERSION_NAME", "1.0.11")
-val appVersionCode: Int = appVersionProp("versionCode", "VERSION_CODE", "1000011").toInt()
+val appVersionName: String = appVersionProp("versionName", "VERSION_NAME", "1.0.12")
+val appVersionCode: Int = appVersionProp("versionCode", "VERSION_CODE", "1000012").toInt()
 
 android {
     namespace = "com.bettermifitness.sync"

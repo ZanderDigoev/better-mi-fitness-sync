@@ -267,7 +267,8 @@ class MiDirectApi(private val client: MiDataClient) {
     /**
      * Uploads a single weight measurement to Mi cloud (Health Connect / HealthKit -> Mi).
      * Uses `data/up_fitness_data` with `phone_id` from [MiDataClient.phoneId] and `sid=xiaomiwear_app_manually`.
-     * Mirrors APK `FitnessDataRequest.uploadFitnessData` + `FitnessDataModel` shape.
+     * Applies a 3-tier fallback (full body composition -> weight+fat -> weight only) in case
+     * Xiaomi's cloud rejects extended composition fields for manual entry.
      */
     suspend fun uploadWeight(
         measurement: WeightMeasurement,
@@ -279,7 +280,36 @@ class MiDirectApi(private val client: MiDataClient) {
         val offsetSec = tzUnits?.let {
             com.bettermifitness.sync.data.time.MiTimezone.fromPayloadOrNull(it)?.offsetSeconds()
         } ?: 0
-        val valueJson = buildString {
+
+        suspend fun postPayload(jsonBody: String): Boolean {
+            return try {
+                val dataList = listOf(
+                    mapOf(
+                        "sid" to sid,
+                        "key" to "weight",
+                        "time" to measurement.timestamp,
+                        "value" to jsonBody,
+                        "zone_offset" to offsetSec,
+                        "zone_name" to "",
+                    ),
+                )
+                val result = client.post(
+                    path = "/app/v1/data/up_fitness_data",
+                    payload = mapOf(
+                        "phone_id" to phoneId,
+                        "data_list" to dataList,
+                    ),
+                )
+                val obj = result.jsonObject
+                val code = obj["code"]?.jsonPrimitive?.content?.toIntOrNull()
+                code == null || code == 0
+            } catch (_: Exception) {
+                false
+            }
+        }
+
+        // Tier 1: Full payload with all metrics
+        val fullJson = buildString {
             append("{")
             append("\"weight\":${measurement.weightKg}")
             append(",\"time\":${measurement.timestamp}")
@@ -287,30 +317,34 @@ class MiDirectApi(private val client: MiDataClient) {
             measurement.bodyFatPercent?.let { append(",\"body_fat_rate\":$it") }
             measurement.muscleMassKg?.let { append(",\"muscle_rate\":$it") }
             measurement.boneMassKg?.let { append(",\"bone_mass\":$it") }
-            measurement.basalMetabolismKcal?.let { append(",\"basal_metabolism\":$it") }
+            measurement.basalMetabolismKcal?.let { append(",\"basal_metabolism\":${it.toInt()}") }
             measurement.waterPercent?.let { append(",\"water_rate\":$it") }
             append("}")
         }
-        val dataList = listOf(
-            mapOf(
-                "sid" to sid,
-                "key" to "weight",
-                "time" to measurement.timestamp,
-                "value" to valueJson,
-                "zone_offset" to offsetSec,
-                "zone_name" to "",
-            ),
-        )
-        val result = client.post(
-            path = "/app/v1/data/up_fitness_data",
-            payload = mapOf(
-                "phone_id" to phoneId,
-                "data_list" to dataList,
-            ),
-        )
-        val obj = result.jsonObject
-        val code = obj["code"]?.jsonPrimitive?.content?.toIntOrNull()
-        return code == null || code == 0
+        if (postPayload(fullJson)) return true
+
+        // Tier 2: Weight + Body Fat (if body fat is present)
+        if (measurement.bodyFatPercent != null) {
+            val fatJson = buildString {
+                append("{")
+                append("\"weight\":${measurement.weightKg}")
+                append(",\"time\":${measurement.timestamp}")
+                tzUnits?.let { append(",\"timezone\":$it") }
+                append(",\"body_fat_rate\":${measurement.bodyFatPercent}")
+                append("}")
+            }
+            if (postPayload(fatJson)) return true
+        }
+
+        // Tier 3: Minimal fallback (weight + time + timezone)
+        val minimalJson = buildString {
+            append("{")
+            append("\"weight\":${measurement.weightKg}")
+            append(",\"time\":${measurement.timestamp}")
+            tzUnits?.let { append(",\"timezone\":$it") }
+            append("}")
+        }
+        return postPayload(minimalJson)
     }
 
     /**

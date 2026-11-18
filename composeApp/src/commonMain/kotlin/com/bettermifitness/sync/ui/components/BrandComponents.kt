@@ -103,7 +103,7 @@ fun PrimaryButton(
 ) {
     Button(
         onClick = onClick,
-        enabled = enabled && !loading,
+        enabled = enabled,
         modifier = modifier.fillMaxWidth().height(BrandSpacing.CtaHeight),
         shape = BrandShapes.Button,
         colors = ButtonDefaults.buttonColors(
