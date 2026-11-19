@@ -29,8 +29,8 @@ data class SettingsUiState(
     val enabledMetrics: Set<String> = emptySet(),
     /** False until the first DataStore emission for metrics / range / auto-sync. */
     val prefsReady: Boolean = false,
-    val rangeDays: Int = 7,
-    val autoSync: Boolean = false,
+    val rangeDays: Int = 30,
+    val autoSync: Boolean = true,
     val lastBackgroundSyncLabel: String = L10n.text(L10n.homeNever),
     val lastBackgroundStatusTitle: String = L10n.text(L10n.outcomeNotSynced),
     val lastBackgroundDetail: String = L10n.text(L10n.outcomeIdleDetail),

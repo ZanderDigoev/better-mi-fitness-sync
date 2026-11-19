@@ -21,8 +21,8 @@ final class HomeStore: ObservableObject {
         var lastBackgroundIsError: Bool = false
         var enabledMetricsCount: Int32 = 0
         var totalMetricsCount: Int32 = 0
-        var rangeDays: Int32 = 7
-        var autoSync: Bool = false
+        var rangeDays: Int32 = 30
+        var autoSync: Bool = true
         var canSync: Bool = true
         var isSyncing: Bool = false
         var healthServiceName: String = L10n.healthFallback

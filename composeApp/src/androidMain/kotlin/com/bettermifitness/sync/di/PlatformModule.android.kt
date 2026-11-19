@@ -31,4 +31,7 @@ actual fun platformModule(): Module = module {
         )
     }
     single { HealthWriter(appContext) }
+    single<com.bettermifitness.sync.sync.SyncProgressNotifier> {
+        com.bettermifitness.sync.notification.AndroidSyncProgressNotifier(appContext)
+    }
 }

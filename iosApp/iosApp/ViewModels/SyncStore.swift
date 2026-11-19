@@ -23,7 +23,7 @@ final class SyncStore: ObservableObject {
         var outcomeMessage: String?
         var outcomeIsWarning: Bool = false
         var healthServiceName: String = L10n.healthFallback
-        var rangeDays: Int32 = 7
+        var rangeDays: Int32 = 30
         var readinessChecked: Bool = false
         var metrics: [MetricRow] = []
     }

@@ -276,7 +276,7 @@ class SyncCoordinatorTest {
     private class FakePrefs(
         autoSync: Boolean = true,
         enabled: Set<String> = SyncPreferences.ALL_METRIC_KEYS,
-        rangeDays: Int = 7,
+        rangeDays: Int = 30,
     ) : SyncPreferencesPort {
         override val autoSync = MutableStateFlow(autoSync)
         override val enabledMetrics = MutableStateFlow(enabled)

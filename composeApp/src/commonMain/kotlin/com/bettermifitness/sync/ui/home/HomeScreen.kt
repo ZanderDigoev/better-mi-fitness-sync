@@ -1,5 +1,11 @@
 package com.bettermifitness.sync.ui.home
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,10 +39,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -156,6 +165,7 @@ fun HomeScreen(
                     else -> L10n.string(L10n.homeLoadingProfile)
                 },
                 isError = state.profileError != null,
+                isSyncing = state.isSyncing,
             )
 
             blockingBanner(state, healthName)?.let { banner ->
@@ -177,7 +187,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun AccountHero(name: String, subtitle: String, isError: Boolean) {
+private fun AccountHero(name: String, subtitle: String, isError: Boolean, isSyncing: Boolean) {
     val letter = name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?"
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -186,7 +196,7 @@ private fun AccountHero(name: String, subtitle: String, isError: Boolean) {
             .fillMaxWidth()
             .padding(vertical = 8.dp),
     ) {
-        LetterAvatar(letter)
+        LetterAvatar(letter, isSyncing)
         Text(
             name,
             style = MaterialTheme.typography.titleLarge,
@@ -209,22 +219,68 @@ private fun AccountHero(name: String, subtitle: String, isError: Boolean) {
     }
 }
 
-// Initial-letter circle.
+// Initial-letter circle with gentle pulsing halo during sync.
 @Composable
-private fun LetterAvatar(letter: String) {
-    Box(
-        modifier = Modifier
-            .size(72.dp)
-            .clip(CircleShape)
-            .background(BrandColors.Navy),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            letter,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
+private fun LetterAvatar(letter: String, isSyncing: Boolean) {
+    val infiniteTransition = rememberInfiniteTransition(label = "avatar_pulse")
+    val pulseScale by if (isSyncing) {
+        infiniteTransition.animateFloat(
+            initialValue = 1f,
+            targetValue = 1.25f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1200, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "pulse_scale",
         )
+    } else {
+        remember { mutableStateOf(1f) }
+    }
+    val pulseAlpha by if (isSyncing) {
+        infiniteTransition.animateFloat(
+            initialValue = 0.45f,
+            targetValue = 0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1200, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "pulse_alpha",
+        )
+    } else {
+        remember { mutableStateOf(0f) }
+    }
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.size(88.dp),
+    ) {
+        if (isSyncing) {
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .graphicsLayer {
+                        scaleX = pulseScale
+                        scaleY = pulseScale
+                        alpha = pulseAlpha
+                    }
+                    .clip(CircleShape)
+                    .background(BrandColors.OrangeBright),
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(CircleShape)
+                .background(BrandColors.Navy),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                letter,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+            )
+        }
     }
 }
 

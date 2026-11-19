@@ -58,6 +58,7 @@ fun commonAppModule(): Module = module {
             healthAvailability = get<HealthAvailability>(),
             healthPermissions = get<HealthPermissionRequester>(),
             repository = get<HealthSyncRunner>(),
+            progressNotifier = get<com.bettermifitness.sync.sync.SyncProgressNotifier>(),
         )
     }
 

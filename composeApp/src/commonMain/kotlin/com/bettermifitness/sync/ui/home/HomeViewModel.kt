@@ -39,8 +39,8 @@ data class HomeUiState(
     /** Empty until prefs load — do not assume all metrics on. */
     val enabledMetricsCount: Int = 0,
     val totalMetricsCount: Int = SyncMetric.entries.size,
-    val rangeDays: Int = 7,
-    val autoSync: Boolean = false,
+    val rangeDays: Int = 30,
+    val autoSync: Boolean = true,
     val canSync: Boolean = false,
     val isSyncing: Boolean = false,
     val healthServiceName: String = "",

@@ -1,5 +1,11 @@
 package com.bettermifitness.sync.ui.components
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -21,9 +27,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bettermifitness.sync.theme.BrandColors
@@ -83,6 +92,7 @@ fun BrandCard(
         modifier = modifier.fillMaxWidth(),
         shape = BrandShapes.Card,
         color = colors.container,
+        border = if (isDarkSurface()) BorderStroke(0.5.dp, Color.White.copy(alpha = 0.08f)) else null,
     ) {
         Column(
             Modifier.padding(BrandSpacing.CardPadding),
@@ -101,10 +111,28 @@ fun PrimaryButton(
     loading: Boolean = false,
     icon: DrawableResource? = AppIcons.Sync,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.97f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
+        label = "btn_scale",
+    )
+
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.fillMaxWidth().height(BrandSpacing.CtaHeight),
+        interactionSource = interactionSource,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(BrandSpacing.CtaHeight)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
         shape = BrandShapes.Button,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,

@@ -12,10 +12,14 @@ import com.bettermifitness.sync.health.HealthPermissionRequester
 import com.bettermifitness.sync.health.HealthStore
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import com.bettermifitness.sync.data.repository.completedCount
+import com.bettermifitness.sync.data.repository.currentRunningLabel
 
 /**
  * Shared sync policy for UI, background tasks, and Shortcuts.
@@ -31,6 +35,7 @@ class SyncCoordinator(
     private val healthAvailability: HealthAvailability,
     private val healthPermissions: HealthPermissionRequester,
     private val repository: HealthSyncRunner,
+    private val progressNotifier: SyncProgressNotifier = NoOpSyncProgressNotifier,
 ) {
     constructor(
         session: SyncSessionPort,
@@ -151,20 +156,39 @@ class SyncCoordinator(
             syncPreferences.syncRangeDays.first()
         }
 
-        return try {
+        return coroutineScope {
             if (resetProgress) repository.resetProgress()
             val now = Clock.System.now()
-            val result = repository.syncAll(
-                from = now.minus(days.days).toString(),
-                to = now.toString(),
-                enabled = enabled,
-            )
-            mapRunResult(result, now.toString(), recordAsBackground, userInitiated, requireAutoSync)
-        } catch (e: Exception) {
-            SyncOutcome.Failed(
-                message = e.message,
-                retryable = true,
-            )
+            progressNotifier.onSyncStarted(enabled.size)
+            val progressJob = launch {
+                repository.syncProgress.collect { prog ->
+                    val done = prog.completedCount(enabled)
+                    val current = prog.currentRunningLabel(enabled)
+                    progressNotifier.onProgress(done, enabled.size, current)
+                }
+            }
+            try {
+                val result = repository.syncAll(
+                    from = now.minus(days.days).toString(),
+                    to = now.toString(),
+                    enabled = enabled,
+                )
+                val outcome = mapRunResult(result, now.toString(), recordAsBackground, userInitiated, requireAutoSync)
+                val isSuccess = outcome is SyncOutcome.Success || outcome is SyncOutcome.PartialSuccess
+                progressNotifier.onSyncFinished(
+                    success = isSuccess,
+                    message = (outcome as? SyncOutcome.Failed)?.message,
+                )
+                outcome
+            } catch (e: Exception) {
+                progressNotifier.onSyncFinished(false, e.message)
+                SyncOutcome.Failed(
+                    message = e.message,
+                    retryable = true,
+                )
+            } finally {
+                progressJob.cancel()
+            }
         }
     }
 

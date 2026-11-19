@@ -54,8 +54,8 @@ interface SyncPreferencesPort {
 data class UserPrefsSnapshot(
     val ready: Boolean = false,
     val enabledMetrics: Set<String> = emptySet(),
-    val syncRangeDays: Int = 7,
-    val autoSync: Boolean = false,
+    val syncRangeDays: Int = 30,
+    val autoSync: Boolean = true,
     val lastSyncTime: String? = null,
     val lastBackgroundSyncTime: String? = null,
 )

@@ -10,8 +10,8 @@ final class SettingsStore: ObservableObject {
 
     struct Snapshot {
         var enabledMetrics: Set<String> = []
-        var rangeDays: Int32 = 7
-        var autoSync: Bool = false
+        var rangeDays: Int32 = 30
+        var autoSync: Bool = true
         var lastBackgroundSyncLabel: String = L10n.homeNever
         var lastBackgroundStatusTitle: String = L10n.outcomeNotSynced
         var lastBackgroundDetail: String = ""

@@ -29,4 +29,5 @@ actual fun platformModule(): Module = module {
         )
     }
     single { HealthWriter() }
+    single<com.bettermifitness.sync.sync.SyncProgressNotifier> { com.bettermifitness.sync.sync.NoOpSyncProgressNotifier }
 }

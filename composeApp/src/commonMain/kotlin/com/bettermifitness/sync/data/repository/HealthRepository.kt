@@ -65,6 +65,45 @@ private fun SyncProgress.withMetric(metric: String, state: SyncState): SyncProgr
     else -> this
 }
 
+val SyncState.isFinished: Boolean get() = this is SyncState.Success || this is SyncState.Error
+
+fun SyncProgress.completedCount(enabled: Set<String>): Int {
+    var count = 0
+    if ("heart_rate" in enabled && heartRate.isFinished) count++
+    if ("resting_heart_rate" in enabled && restingHeartRate.isFinished) count++
+    if ("sleep" in enabled && sleep.isFinished) count++
+    if ("hrv" in enabled && hrv.isFinished) count++
+    if ("steps" in enabled && steps.isFinished) count++
+    if ("distance" in enabled && distance.isFinished) count++
+    if ("active_calories" in enabled && activeCalories.isFinished) count++
+    if ("spo2" in enabled && spo2.isFinished) count++
+    if ("weight" in enabled && weight.isFinished) count++
+    if ("workouts" in enabled && workouts.isFinished) count++
+    if ("blood_pressure" in enabled && bloodPressure.isFinished) count++
+    if ("temperature" in enabled && temperature.isFinished) count++
+    if ("vo2_max" in enabled && vo2Max.isFinished) count++
+    return count
+}
+
+fun SyncProgress.currentRunningLabel(enabled: Set<String>): String {
+    return when {
+        "heart_rate" in enabled && heartRate is SyncState.InProgress -> "Пульс"
+        "resting_heart_rate" in enabled && restingHeartRate is SyncState.InProgress -> "Пульс в покое"
+        "sleep" in enabled && sleep is SyncState.InProgress -> "Сон"
+        "hrv" in enabled && hrv is SyncState.InProgress -> "Вариабельность пульса"
+        "steps" in enabled && steps is SyncState.InProgress -> "Шаги"
+        "distance" in enabled && distance is SyncState.InProgress -> "Расстояние"
+        "active_calories" in enabled && activeCalories is SyncState.InProgress -> "Активные калории"
+        "spo2" in enabled && spo2 is SyncState.InProgress -> "Кислород в крови"
+        "weight" in enabled && weight is SyncState.InProgress -> "Вес и жировая масса"
+        "workouts" in enabled && workouts is SyncState.InProgress -> "Тренировки"
+        "blood_pressure" in enabled && bloodPressure is SyncState.InProgress -> "Давление"
+        "temperature" in enabled && temperature is SyncState.InProgress -> "Температура тела"
+        "vo2_max" in enabled && vo2Max is SyncState.InProgress -> "VO2 Max"
+        else -> "Синхронизация"
+    }
+}
+
 /**
  * Orchestrates Mi fetch → parse → platform health write.
  * Each metric fails independently; one bad metric does not abort the rest.

@@ -1,5 +1,9 @@
 package com.bettermifitness.sync.ui.sync
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -142,6 +147,14 @@ fun SyncScreen(
             }
             val hasActiveProgress = state.isSyncing || (finishedCount > 0 && finishedCount < totalCount)
             val progressFraction = if (totalCount > 0) finishedCount.toFloat() / totalCount.toFloat() else 0f
+            val animatedProgress by animateFloatAsState(
+                targetValue = progressFraction,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessLow,
+                ),
+                label = "progress_anim",
+            )
             val percentInt = (progressFraction * 100).toInt().coerceIn(0, 100)
 
             if (hasActiveProgress && totalCount > 0) {
@@ -149,6 +162,7 @@ fun SyncScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
                     color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.08f)),
                     tonalElevation = 2.dp,
                 ) {
                     Column(
@@ -174,7 +188,7 @@ fun SyncScreen(
                             )
                         }
                         LinearProgressIndicator(
-                            progress = { progressFraction },
+                            progress = { animatedProgress },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(8.dp)

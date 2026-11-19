@@ -48,7 +48,7 @@ class SyncPreferences(
         dataStore.data.map { it[LAST_BACKGROUND_SYNC_MESSAGE_KEY] }
 
     override val autoSync: Flow<Boolean> = dataStore.data.map {
-        it[AUTO_SYNC_KEY]?.toBooleanStrictOrNull() ?: false
+        it[AUTO_SYNC_KEY]?.toBooleanStrictOrNull() ?: true
     }
 
     override val enabledMetrics: Flow<Set<String>> = dataStore.data.map {
@@ -56,7 +56,7 @@ class SyncPreferences(
     }
 
     override val syncRangeDays: Flow<Int> = dataStore.data.map {
-        it[SYNC_RANGE_DAYS_KEY] ?: 7
+        it[SYNC_RANGE_DAYS_KEY] ?: 30
     }
 
     /**

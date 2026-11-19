@@ -29,7 +29,7 @@ data class SyncUiState(
     val outcomeMessage: String? = null,
     val outcomeIsWarning: Boolean = false,
     val healthServiceName: String = "",
-    val rangeDays: Int = 7,
+    val rangeDays: Int = 30,
     /** Empty until prefs load — rows render only once. */
     val enabledMetrics: Set<String> = emptySet(),
     /** False until the first hot-snapshot emission — screens hold skeleton. */
