@@ -48,6 +48,8 @@ import com.bettermifitness.sync.platform.appVersionLabel
 import com.bettermifitness.sync.theme.BrandShapes
 import com.bettermifitness.sync.theme.BrandSpacing
 import com.bettermifitness.sync.ui.SyncMetric
+import com.bettermifitness.sync.ui.components.AmbientScreenBackground
+import com.bettermifitness.sync.ui.components.GlassCard
 import com.bettermifitness.sync.ui.components.StatusBanner
 import com.bettermifitness.sync.ui.components.StatusTone
 import com.bettermifitness.sync.ui.icons.AppIcon
@@ -72,29 +74,30 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onLogout: (
         }
     }
 
-    Scaffold(
-        contentWindowInsets = WindowInsets.safeDrawing,
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        L10n.string(L10n.settingsTitle),
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
-                ),
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        AppIcon(AppIcons.ArrowBack, contentDescription = L10n.string(L10n.back))
-                    }
-                },
-            )
-        },
-    ) { padding ->
+    AmbientScreenBackground {
+        Scaffold(
+            contentWindowInsets = WindowInsets.safeDrawing,
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            L10n.string(L10n.settingsTitle),
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    ),
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            AppIcon(AppIcons.ArrowBack, contentDescription = L10n.string(L10n.back))
+                        }
+                    },
+                )
+            },
+        ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -157,6 +160,7 @@ fun SettingsScreen(viewModel: SettingsViewModel, onBack: () -> Unit, onLogout: (
             Spacer(Modifier.height(16.dp))
         }
     }
+}
 }
 
 @Composable
@@ -392,13 +396,7 @@ private fun SettingsGroup(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 4.dp),
         )
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = BrandShapes.Card,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            tonalElevation = 2.dp,
-        ) {
+        GlassCard(shape = BrandShapes.Card) {
             Column {
                 content()
             }

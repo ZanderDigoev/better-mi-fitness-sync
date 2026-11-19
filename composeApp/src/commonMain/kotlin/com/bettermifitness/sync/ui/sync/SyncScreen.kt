@@ -7,6 +7,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,6 +47,8 @@ import com.bettermifitness.sync.i18n.L10n
 import com.bettermifitness.sync.data.repository.SyncState
 import com.bettermifitness.sync.theme.BrandSpacing
 import com.bettermifitness.sync.ui.SyncMetric
+import com.bettermifitness.sync.ui.components.AmbientScreenBackground
+import com.bettermifitness.sync.ui.components.GlassCard
 import com.bettermifitness.sync.ui.components.PrimaryButton
 import com.bettermifitness.sync.ui.components.StickyCtaBar
 import com.bettermifitness.sync.ui.icons.AppIcon
@@ -78,62 +81,64 @@ fun SyncScreen(
             )
         }
 
-    Scaffold(
-        contentWindowInsets = WindowInsets.safeDrawing,
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = { Text(L10n.string(L10n.syncTitle), fontWeight = FontWeight.SemiBold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
-                ),
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        AppIcon(AppIcons.ArrowBack, contentDescription = L10n.string(L10n.back))
-                    }
-                },
-            )
-        },
-        bottomBar = {
-            StickyCtaBar(modifier = Modifier.navigationBarsPadding()) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (hasAuthError) {
-                        PrimaryButton(
-                            text = L10n.string(L10n.outcomeSignInAgain),
-                            onClick = onLogout,
-                            icon = null,
-                        )
-                    } else {
-                        PrimaryButton(
-                            text = if (state.isSyncing) L10n.string(L10n.homeSyncing) else L10n.string(L10n.syncNow),
-                            onClick = viewModel::startSync,
-                            enabled = state.healthAvailable && metrics.isNotEmpty() && !state.isSyncing,
-                            loading = state.isSyncing,
-                            icon = AppIcons.Sync,
-                        )
-                    }
-                    if (!state.healthAvailable && !hasAuthError) {
-                        TextButton(
-                            onClick = viewModel::openHealthService,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text(L10n.textFmt(L10n.syncOpenHealth, healthName))
+    AmbientScreenBackground {
+        Scaffold(
+            contentWindowInsets = WindowInsets.safeDrawing,
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = { Text(L10n.string(L10n.syncTitle), fontWeight = FontWeight.SemiBold) },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    ),
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            AppIcon(AppIcons.ArrowBack, contentDescription = L10n.string(L10n.back))
+                        }
+                    },
+                )
+            },
+            bottomBar = {
+                StickyCtaBar(modifier = Modifier.navigationBarsPadding()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (hasAuthError) {
+                            PrimaryButton(
+                                text = L10n.string(L10n.outcomeSignInAgain),
+                                onClick = onLogout,
+                                icon = null,
+                            )
+                        } else {
+                            PrimaryButton(
+                                text = if (state.isSyncing) L10n.string(L10n.homeSyncing) else L10n.string(L10n.syncNow),
+                                onClick = viewModel::startSync,
+                                enabled = state.healthAvailable && metrics.isNotEmpty() && !state.isSyncing,
+                                loading = state.isSyncing,
+                                icon = AppIcons.Sync,
+                            )
+                        }
+                        if (!state.healthAvailable && !hasAuthError) {
+                            TextButton(
+                                onClick = viewModel::openHealthService,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(L10n.textFmt(L10n.syncOpenHealth, healthName))
+                            }
                         }
                     }
                 }
-            }
-        },
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = BrandSpacing.ScreenHorizontal)
-                .padding(top = 12.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+            },
+        ) { padding ->
+            val bottomPadding = padding.calculateBottomPadding()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = padding.calculateTopPadding())
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = BrandSpacing.ScreenHorizontal)
+                    .padding(top = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
             Text(
                 daysLabel,
                 style = MaterialTheme.typography.bodyMedium,
@@ -223,13 +228,7 @@ fun SyncScreen(
                         .padding(vertical = 40.dp),
                 )
             } else {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                    tonalElevation = 2.dp,
-                ) {
+                GlassCard(shape = RoundedCornerShape(16.dp)) {
                     Column {
                         metrics.forEachIndexed { index, metric ->
                             MetricRow(
@@ -243,8 +242,10 @@ fun SyncScreen(
                     }
                 }
             }
+            Spacer(Modifier.height(bottomPadding + 16.dp))
         }
     }
+}
 }
 
 @Composable
@@ -363,13 +364,7 @@ private fun SyncProgressBarCard(
     )
     val percentInt = (progressFraction * 100).toInt().coerceIn(0, 100)
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-        tonalElevation = 2.dp,
-    ) {
+    GlassCard(shape = RoundedCornerShape(14.dp)) {
         Column(
             modifier = Modifier.padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),

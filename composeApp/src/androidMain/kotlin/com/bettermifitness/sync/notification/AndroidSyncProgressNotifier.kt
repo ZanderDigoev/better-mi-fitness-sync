@@ -55,6 +55,7 @@ class AndroidSyncProgressNotifier(
         private const val AUTO_DISMISS_DELAY_MS = 8000L
         private const val BRAND_ORANGE_HEX = "#FF6B35"
         private const val PIC_KEY_SYNC = "sync_icon"
+        private const val NOTIFICATION_TITLE = "Mi Fit sync"
     }
 
     private fun isXiaomi(): Boolean {
@@ -157,7 +158,7 @@ class AndroidSyncProgressNotifier(
 
     override fun onSyncStarted(total: Int) {
         if (!hasPermission()) return
-        val title = "Better Mi Fitness Sync"
+        val title = NOTIFICATION_TITLE
         val text = "Запуск синхронизации (0 из $total)..."
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -191,7 +192,7 @@ class AndroidSyncProgressNotifier(
         } else {
             "Синхронизация ($done из $total, $percent%)"
         }
-        val title = "Better Mi Fitness Sync"
+        val title = NOTIFICATION_TITLE
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(iconRes)
@@ -217,7 +218,7 @@ class AndroidSyncProgressNotifier(
 
     override fun onSyncFinished(success: Boolean, message: String?) {
         if (!hasPermission()) return
-        val title = "Better Mi Fitness Sync"
+        val title = NOTIFICATION_TITLE
         val text = if (success) "Синхронизация завершена" else (message ?: "Ошибка синхронизации")
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)

@@ -54,6 +54,8 @@ import com.bettermifitness.sync.i18n.L10n
 import com.bettermifitness.sync.theme.BrandColors
 import com.bettermifitness.sync.theme.BrandShapes
 import com.bettermifitness.sync.theme.BrandSpacing
+import com.bettermifitness.sync.ui.components.AmbientScreenBackground
+import com.bettermifitness.sync.ui.components.GlassCard
 import com.bettermifitness.sync.ui.components.PrimaryButton
 import com.bettermifitness.sync.ui.components.StickyCtaBar
 import com.bettermifitness.sync.ui.icons.AppIcon
@@ -103,86 +105,91 @@ fun HomeScreen(
         else -> L10n.string(L10n.homeSyncNow)
     }
 
-    Scaffold(
-        contentWindowInsets = WindowInsets.safeDrawing,
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                title = { },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                ),
-                actions = {
-                    IconButton(onClick = onSettingsClick) {
-                        AppIcon(
-                            AppIcons.Settings,
-                            contentDescription = L10n.string(L10n.homeSettingsAccessibility),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                },
-            )
-        },
-        bottomBar = {
-            StickyCtaBar(modifier = Modifier.navigationBarsPadding()) {
-                PrimaryButton(
-                    text = primaryLabel,
-                    onClick = {
-                        when {
-                            hasAuthError -> {
-                                viewModel.logout()
-                                onLogout()
-                            }
-                            state.healthNeedsAction -> viewModel.openHealthService()
-                            !canUpdate -> onSettingsClick()
-                            state.isSyncing -> onSyncClick()
-                            else -> {
-                                viewModel.startSyncIfIdle()
-                                onSyncClick()
-                            }
+    AmbientScreenBackground {
+        Scaffold(
+            contentWindowInsets = WindowInsets.safeDrawing,
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = { },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                    ),
+                    actions = {
+                        IconButton(onClick = onSettingsClick) {
+                            AppIcon(
+                                AppIcons.Settings,
+                                contentDescription = L10n.string(L10n.homeSettingsAccessibility),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
                         }
                     },
-                    loading = state.isSyncing,
-                    icon = if (hasAuthError || (!canUpdate && !state.healthNeedsAction)) null else AppIcons.Sync,
                 )
+            },
+            bottomBar = {
+                StickyCtaBar(modifier = Modifier.navigationBarsPadding()) {
+                    PrimaryButton(
+                        text = primaryLabel,
+                        onClick = {
+                            when {
+                                hasAuthError -> {
+                                    viewModel.logout()
+                                    onLogout()
+                                }
+                                state.healthNeedsAction -> viewModel.openHealthService()
+                                !canUpdate -> onSettingsClick()
+                                state.isSyncing -> onSyncClick()
+                                else -> {
+                                    viewModel.startSyncIfIdle()
+                                    onSyncClick()
+                                }
+                            }
+                        },
+                        loading = state.isSyncing,
+                        icon = if (hasAuthError || (!canUpdate && !state.healthNeedsAction)) null else AppIcons.Sync,
+                    )
+                }
+            },
+        ) { padding ->
+            val bottomPadding = padding.calculateBottomPadding()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = padding.calculateTopPadding())
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = BrandSpacing.ScreenHorizontal)
+                    .padding(top = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                AccountHero(
+                    name = titleName,
+                    subtitle = when {
+                        state.profileError != null -> state.profileError ?: L10n.string(L10n.homeSignedIn)
+                        state.profile != null -> L10n.string(L10n.homeConnected)
+                        else -> L10n.string(L10n.homeLoadingProfile)
+                    },
+                    isError = state.profileError != null,
+                    isSyncing = state.isSyncing,
+                )
+
+                blockingBanner(state, healthName)?.let { banner ->
+                    BlockingBannerCard(banner)
+                }
+
+                SetupSection(
+                    state = state,
+                    healthName = healthName,
+                    onHealthClick = {
+                        if (state.healthNeedsAction) viewModel.openHealthService()
+                    },
+                    onSyncOptionsClick = onSettingsClick,
+                )
+
+                ActivitySection(state = state, onClick = onSyncClick)
+
+                Spacer(Modifier.height(bottomPadding + 20.dp))
             }
-        },
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = BrandSpacing.ScreenHorizontal)
-                .padding(top = 4.dp, bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            AccountHero(
-                name = titleName,
-                subtitle = when {
-                    state.profileError != null -> state.profileError ?: L10n.string(L10n.homeSignedIn)
-                    state.profile != null -> L10n.string(L10n.homeConnected)
-                    else -> L10n.string(L10n.homeLoadingProfile)
-                },
-                isError = state.profileError != null,
-                isSyncing = state.isSyncing,
-            )
-
-            blockingBanner(state, healthName)?.let { banner ->
-                BlockingBannerCard(banner)
-            }
-
-            SetupSection(
-                state = state,
-                healthName = healthName,
-                onHealthClick = {
-                    if (state.healthNeedsAction) viewModel.openHealthService()
-                },
-                onSyncOptionsClick = onSettingsClick,
-            )
-
-            ActivitySection(state = state, onClick = onSyncClick)
         }
     }
 }
@@ -362,13 +369,7 @@ private fun SetupSection(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         SectionLabel(L10n.string(L10n.homeSetup))
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            tonalElevation = 2.dp,
-        ) {
+        GlassCard(shape = RoundedCornerShape(14.dp)) {
             Column {
                 SetupRow(
                     icon = AppIcons.Favorite,
@@ -506,16 +507,7 @@ private fun ActivitySection(state: HomeUiState, onClick: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         SectionLabel(L10n.string(L10n.homeActivity))
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .clickable(onClick = onClick),
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
-            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-            tonalElevation = 2.dp,
-        ) {
+        GlassCard(shape = RoundedCornerShape(14.dp), onClick = onClick) {
             Column {
                 FootnoteRow(
                     title = L10n.string(L10n.homeLastSync),

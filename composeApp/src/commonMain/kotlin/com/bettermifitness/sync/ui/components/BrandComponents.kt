@@ -4,9 +4,12 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -31,7 +35,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -160,6 +166,69 @@ fun PrimaryButton(
 }
 
 @Composable
+fun AmbientScreenBackground(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF181C26),
+                        Color(0xFF0D0E12),
+                        Color(0xFF12151D),
+                    ),
+                ),
+            ),
+    ) {
+        content()
+    }
+}
+
+@Composable
+fun GlassCard(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(16.dp),
+    onClick: (() -> Unit)? = null,
+    content: @Composable () -> Unit,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = shape,
+        color = Color.Transparent,
+        border = BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                listOf(
+                    Color(0x55FFFFFF),
+                    Color(0x18FFFFFF),
+                ),
+            ),
+        ),
+        shadowElevation = 8.dp,
+    ) {
+        val clickModifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0xFF232733).copy(alpha = 0.72f),
+                            Color(0xFF13151D).copy(alpha = 0.88f),
+                        ),
+                    ),
+                )
+                .then(clickModifier),
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
 fun StickyCtaBar(
     modifier: Modifier = Modifier,
     hint: String? = null,
@@ -167,25 +236,45 @@ fun StickyCtaBar(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shadowElevation = 10.dp,
-        tonalElevation = 4.dp,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        shadowElevation = 16.dp,
+        color = Color.Transparent,
+        border = BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                listOf(
+                    Color(0x45FFFFFF),
+                    Color(0x05FFFFFF),
+                ),
+            ),
+        ),
     ) {
-        Column(
-            Modifier
+        Box(
+            modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = BrandSpacing.ScreenHorizontal, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0xFF191D26).copy(alpha = 0.82f),
+                            Color(0xFF0F1117).copy(alpha = 0.95f),
+                        ),
+                    ),
+                ),
         ) {
-            content()
-            if (hint != null) {
-                Text(
-                    hint,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = BrandSpacing.ScreenHorizontal, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                content()
+                if (hint != null) {
+                    Text(
+                        hint,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
