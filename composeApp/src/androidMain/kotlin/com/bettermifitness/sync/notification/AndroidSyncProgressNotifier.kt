@@ -5,11 +5,14 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.drawable.Icon
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.bettermifitness.sync.sync.SyncProgressNotifier
+import io.github.d4viddf.hyperisland_kit.HyperIslandNotification
+import io.github.d4viddf.hyperisland_kit.HyperPicture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -50,6 +53,8 @@ class AndroidSyncProgressNotifier(
         const val CHANNEL_ID = "sync_progress_v5"
         const val NOTIFICATION_ID = 2001
         private const val AUTO_DISMISS_DELAY_MS = 8000L
+        private const val BRAND_ORANGE_HEX = "#FF6B35"
+        private const val PIC_KEY_SYNC = "pic.sync"
     }
 
     init {
@@ -97,12 +102,56 @@ class AndroidSyncProgressNotifier(
         return true
     }
 
+    private fun attachHyperIslandExtras(
+        builder: NotificationCompat.Builder,
+        title: String,
+        text: String,
+        percent: Int,
+        isFinished: Boolean = false,
+    ) {
+        try {
+            if (HyperIslandNotification.isSupported(context)) {
+                val icon = Icon.createWithResource(context, iconRes)
+                val pic = HyperPicture(PIC_KEY_SYNC, icon)
+                val island = HyperIslandNotification(context, CHANNEL_ID, text)
+                    .addPicture(pic)
+                    .setSmallIslandCircularProgress(
+                        PIC_KEY_SYNC,
+                        percent,
+                        BRAND_ORANGE_HEX,
+                        null,
+                        true,
+                    )
+                    .setBigIslandProgressCircle(
+                        PIC_KEY_SYNC,
+                        title,
+                        percent,
+                        BRAND_ORANGE_HEX,
+                        false,
+                    )
+
+                if (isFinished) {
+                    island.setCancel(true)
+                }
+
+                val bundle = island.buildResourceBundle()
+                val jsonParam = island.buildJsonParam()
+
+                builder.addExtras(bundle)
+                builder.extras.putString("miui.focus.param", jsonParam)
+                Log.d(TAG, "Attached HyperIsland payload for progress: $percent%")
+            }
+        } catch (e: Throwable) {
+            Log.w(TAG, "HyperIsland attachment fallback: ${e.message}")
+        }
+    }
+
     override fun onSyncStarted(total: Int) {
         if (!hasPermission()) return
         val title = "Better Mi Fitness Sync"
         val text = "Запуск синхронизации (0 из $total)..."
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(iconRes)
             .setContentTitle(title)
             .setContentText(text)
@@ -114,10 +163,11 @@ class AndroidSyncProgressNotifier(
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .build()
+
+        attachHyperIslandExtras(builder, title, text, 0)
 
         try {
-            notificationManager?.notify(NOTIFICATION_ID, notification)
+            notificationManager?.notify(NOTIFICATION_ID, builder.build())
             Log.d(TAG, "Posted sync start notification")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to post sync start notification", e)
@@ -132,10 +182,11 @@ class AndroidSyncProgressNotifier(
         } else {
             "Синхронизация ($done из $total, $percent%)"
         }
+        val title = "Better Mi Fitness Sync"
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(iconRes)
-            .setContentTitle("Better Mi Fitness Sync")
+            .setContentTitle(title)
             .setContentText(text)
             .setContentIntent(contentIntent)
             .setProgress(total, done, false)
@@ -145,10 +196,11 @@ class AndroidSyncProgressNotifier(
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .build()
+
+        attachHyperIslandExtras(builder, title, text, percent)
 
         try {
-            notificationManager?.notify(NOTIFICATION_ID, notification)
+            notificationManager?.notify(NOTIFICATION_ID, builder.build())
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update sync progress notification", e)
         }
@@ -159,7 +211,7 @@ class AndroidSyncProgressNotifier(
         val title = "Better Mi Fitness Sync"
         val text = if (success) "Синхронизация завершена" else (message ?: "Ошибка синхронизации")
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(iconRes)
             .setContentTitle(title)
             .setContentText(text)
@@ -172,10 +224,11 @@ class AndroidSyncProgressNotifier(
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .build()
+
+        attachHyperIslandExtras(builder, title, text, 100, isFinished = true)
 
         try {
-            notificationManager?.notify(NOTIFICATION_ID, notification)
+            notificationManager?.notify(NOTIFICATION_ID, builder.build())
             Log.d(TAG, "Posted sync finished notification: $text")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to post sync finish notification", e)

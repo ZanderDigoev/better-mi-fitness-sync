@@ -102,6 +102,7 @@ kotlin {
             implementation(libs.health.connect)
             implementation(libs.androidx.work.runtime)
             implementation(libs.androidx.lifecycle.process)
+            implementation("io.github.d4viddf:hyperisland_kit:0.4.5")
         }
 
         iosMain.dependencies {

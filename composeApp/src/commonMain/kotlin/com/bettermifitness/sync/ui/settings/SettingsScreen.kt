@@ -1,5 +1,6 @@
 package com.bettermifitness.sync.ui.settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -394,7 +395,9 @@ private fun SettingsGroup(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = BrandShapes.Card,
-            color = MaterialTheme.colorScheme.surface,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+            tonalElevation = 2.dp,
         ) {
             Column {
                 content()
