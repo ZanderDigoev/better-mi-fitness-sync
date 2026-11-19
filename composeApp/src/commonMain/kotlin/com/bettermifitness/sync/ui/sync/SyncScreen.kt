@@ -146,58 +146,13 @@ fun SyncScreen(
                 s is SyncState.Success || s is SyncState.Error
             }
             val hasActiveProgress = state.isSyncing || (finishedCount > 0 && finishedCount < totalCount)
-            val progressFraction = if (totalCount > 0) finishedCount.toFloat() / totalCount.toFloat() else 0f
-            val animatedProgress by animateFloatAsState(
-                targetValue = progressFraction,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessLow,
-                ),
-                label = "progress_anim",
-            )
-            val percentInt = (progressFraction * 100).toInt().coerceIn(0, 100)
 
             if (hasActiveProgress && totalCount > 0) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.08f)),
-                    tonalElevation = 2.dp,
-                ) {
-                    Column(
-                        modifier = Modifier.padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = if (state.isSyncing) L10n.string(L10n.homeSyncing) else L10n.string(L10n.syncStatusDone),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                text = "$finishedCount из $totalCount ($percentInt%)",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                        LinearProgressIndicator(
-                            progress = { animatedProgress },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp)),
-                            color = MaterialTheme.colorScheme.primary,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                        )
-                    }
-                }
+                SyncProgressBarCard(
+                    isSyncing = state.isSyncing,
+                    finishedCount = finishedCount,
+                    totalCount = totalCount,
+                )
             }
 
             if (hasAuthError) {
@@ -384,6 +339,65 @@ private fun MetricRow(metric: SyncMetric, syncState: SyncState) {
                 fontWeight = FontWeight.Medium,
                 color = color,
                 maxLines = 1,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SyncProgressBarCard(
+    isSyncing: Boolean,
+    finishedCount: Int,
+    totalCount: Int,
+) {
+    val progressFraction = if (totalCount > 0) finishedCount.toFloat() / totalCount.toFloat() else 0f
+    val animatedProgress by animateFloatAsState(
+        targetValue = progressFraction,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessLow,
+        ),
+        label = "progress_anim",
+    )
+    val percentInt = (progressFraction * 100).toInt().coerceIn(0, 100)
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.08f)),
+        tonalElevation = 2.dp,
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = if (isSyncing) L10n.string(L10n.homeSyncing) else L10n.string(L10n.syncStatusDone),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = "$finishedCount из $totalCount ($percentInt%)",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            LinearProgressIndicator(
+                progress = { animatedProgress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
             )
         }
     }

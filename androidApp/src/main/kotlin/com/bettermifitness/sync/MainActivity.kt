@@ -37,8 +37,10 @@ class MainActivity : ComponentActivity() {
         }
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
+            val postNotif = android.Manifest.permission.POST_NOTIFICATIONS
+            val granted = android.content.pm.PackageManager.PERMISSION_GRANTED
+            if (checkSelfPermission(postNotif) != granted) {
+                requestPermissions(arrayOf(postNotif), 101)
             }
         }
 
