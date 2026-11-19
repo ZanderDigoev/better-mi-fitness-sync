@@ -10,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +26,7 @@ import com.bettermifitness.sync.ui.home.HomeScreen
 import com.bettermifitness.sync.ui.login.LoginScreen
 import com.bettermifitness.sync.ui.settings.SettingsScreen
 import com.bettermifitness.sync.ui.sync.SyncScreen
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.sharedKoinViewModel
 
@@ -47,11 +49,20 @@ fun NavGraph() {
     val tokenStore = koinInject<TokenStore>()
     val sessionManager = koinInject<MiSessionManager>()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val scope = rememberCoroutineScope()
 
     var auth by remember {
         mutableStateOf(
             if (sessionManager.isActive) AuthBootstrap.LoggedIn else AuthBootstrap.Loading,
         )
+    }
+
+    val performLogout: () -> Unit = {
+        scope.launch {
+            sessionManager.clear()
+            tokenStore.clear()
+            auth = AuthBootstrap.LoggedOut
+        }
     }
 
     // Cold start: load saved credentials once.
@@ -102,33 +113,21 @@ fun NavGraph() {
                         viewModel = entry.sharedKoinViewModel(navController),
                         onSyncClick = { navController.navigate(Routes.SYNC) },
                         onSettingsClick = { navController.navigate(Routes.SETTINGS) },
-                        onLogout = {
-                            sessionManager.clear()
-                            tokenStore.clear()
-                            auth = AuthBootstrap.LoggedOut
-                        },
+                        onLogout = performLogout,
                     )
                 }
                 composable(Routes.SETTINGS) { entry ->
                     SettingsScreen(
                         viewModel = entry.sharedKoinViewModel(navController),
                         onBack = { navController.popBackStack() },
-                        onLogout = {
-                            sessionManager.clear()
-                            tokenStore.clear()
-                            auth = AuthBootstrap.LoggedOut
-                        },
+                        onLogout = performLogout,
                     )
                 }
                 composable(Routes.SYNC) { entry ->
                     SyncScreen(
                         viewModel = entry.sharedKoinViewModel(navController),
                         onBack = { navController.popBackStack() },
-                        onLogout = {
-                            sessionManager.clear()
-                            tokenStore.clear()
-                            auth = AuthBootstrap.LoggedOut
-                        },
+                        onLogout = performLogout,
                     )
                 }
             }
