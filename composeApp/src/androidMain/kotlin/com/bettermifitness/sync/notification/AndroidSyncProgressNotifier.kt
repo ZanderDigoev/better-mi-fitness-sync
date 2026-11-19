@@ -30,7 +30,7 @@ class AndroidSyncProgressNotifier(
             "drawable",
             context.packageName,
         )
-        if (res != 0) res else context.applicationInfo.icon
+        if (res != 0) res else android.R.drawable.ic_popup_sync
     }
 
     private val contentIntent: PendingIntent? by lazy {
@@ -47,9 +47,9 @@ class AndroidSyncProgressNotifier(
 
     companion object {
         private const val TAG = "SyncNotification"
-        const val CHANNEL_ID = "sync_progress_v4"
+        const val CHANNEL_ID = "sync_progress_v5"
         const val NOTIFICATION_ID = 2001
-        private const val FOCUS_PARAM_KEY = "miui.focus.param"
+        private const val AUTO_DISMISS_DELAY_MS = 8000L
     }
 
     init {
@@ -60,17 +60,18 @@ class AndroidSyncProgressNotifier(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
                 notificationManager?.deleteNotificationChannel("sync_progress_channel")
+                notificationManager?.deleteNotificationChannel("sync_progress_v4")
             } catch (_: Exception) {}
 
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "Синхронизация данных",
-                NotificationManager.IMPORTANCE_HIGH,
+                NotificationManager.IMPORTANCE_DEFAULT,
             ).apply {
                 description = "Прогресс синхронизации данных Mi Fitness с Health Connect"
                 enableVibration(false)
                 setSound(null, null)
-                setShowBadge(true)
+                setShowBadge(false)
                 lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             }
             notificationManager?.createNotificationChannel(channel)
@@ -96,34 +97,10 @@ class AndroidSyncProgressNotifier(
         return true
     }
 
-    private fun buildHyperOsFocusParam(ticker: String, percent: Int): String {
-        return """
-        {
-          "param_v2": {
-            "protocol": 1,
-            "business": "fitness",
-            "enableFloat": true,
-            "updatable": true,
-            "ticker": "$ticker",
-            "param_island": {
-              "islandProperty": 1,
-              "smallIslandArea": {
-                "type": 1
-              },
-              "bigIslandArea": {
-                "type": 1
-              }
-            }
-          }
-        }
-        """.trimIndent()
-    }
-
     override fun onSyncStarted(total: Int) {
         if (!hasPermission()) return
         val title = "Better Mi Fitness Sync"
         val text = "Запуск синхронизации (0 из $total)..."
-        val focusParam = buildHyperOsFocusParam(text, 0)
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(iconRes)
@@ -133,11 +110,10 @@ class AndroidSyncProgressNotifier(
             .setProgress(total, 0, false)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setSilent(true)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .apply {
-                extras.putString(FOCUS_PARAM_KEY, focusParam)
-            }
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
 
         try {
@@ -156,7 +132,6 @@ class AndroidSyncProgressNotifier(
         } else {
             "Синхронизация ($done из $total, $percent%)"
         }
-        val focusParam = buildHyperOsFocusParam(text, percent)
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(iconRes)
@@ -166,11 +141,10 @@ class AndroidSyncProgressNotifier(
             .setProgress(total, done, false)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setSilent(true)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .apply {
-                extras.putString(FOCUS_PARAM_KEY, focusParam)
-            }
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
 
         try {
@@ -184,7 +158,6 @@ class AndroidSyncProgressNotifier(
         if (!hasPermission()) return
         val title = "Better Mi Fitness Sync"
         val text = if (success) "Синхронизация завершена" else (message ?: "Ошибка синхронизации")
-        val focusParam = buildHyperOsFocusParam(text, 100)
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(iconRes)
@@ -195,11 +168,10 @@ class AndroidSyncProgressNotifier(
             .setOngoing(false)
             .setAutoCancel(true)
             .setOnlyAlertOnce(true)
+            .setSilent(true)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .apply {
-                extras.putString(FOCUS_PARAM_KEY, focusParam)
-            }
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
 
         try {
@@ -209,12 +181,13 @@ class AndroidSyncProgressNotifier(
             Log.e(TAG, "Failed to post sync finish notification", e)
         }
 
-        // Auto dismiss after 2.5 seconds so notification bar stays clean
-        scope.launch {
-            delay(2500)
-            try {
-                notificationManager?.cancel(NOTIFICATION_ID)
-            } catch (_: Exception) {}
+        if (success) {
+            scope.launch {
+                delay(AUTO_DISMISS_DELAY_MS)
+                try {
+                    notificationManager?.cancel(NOTIFICATION_ID)
+                } catch (_: Exception) {}
+            }
         }
     }
 }
