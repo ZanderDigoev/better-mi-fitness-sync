@@ -283,6 +283,12 @@ class MiAuth(
             Url("https://account.xiaomi.com/"),
             Cookie(name = "passToken", value = credentials.passToken, domain = ".xiaomi.com", path = "/"),
         )
+        if (credentials.cUserId.isNotBlank()) {
+            cookieStorage.addCookie(
+                Url("https://account.xiaomi.com/"),
+                Cookie(name = "cUserId", value = credentials.cUserId, domain = ".xiaomi.com", path = "/"),
+            )
+        }
 
         return try {
             val refreshed = loginWithPassTokenCookies(
@@ -638,6 +644,12 @@ class MiAuth(
             Url("https://account.xiaomi.com/"),
             Cookie(name = "passToken", value = passToken, domain = ".xiaomi.com", path = "/"),
         )
+        if (previousCUserId.isNotBlank()) {
+            cookieStorage.addCookie(
+                Url("https://account.xiaomi.com/"),
+                Cookie(name = "cUserId", value = previousCUserId, domain = ".xiaomi.com", path = "/"),
+            )
+        }
 
         val loginUrl =
             "https://account.xiaomi.com/pass/serviceLogin?sid=${sid.encodeURLParameter()}" +

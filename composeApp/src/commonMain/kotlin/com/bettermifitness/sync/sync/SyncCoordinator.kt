@@ -198,13 +198,7 @@ class SyncCoordinator(
         }
 
         return when {
-            result.isFullSuccess -> SyncOutcome.Success
-            result.isPartialSuccess -> SyncOutcome.PartialSuccess(
-                succeeded = result.succeeded,
-                failed = result.failed,
-                summary = result.summary(),
-            )
-            result.isTotalFailure && result.hadAuthFailure ->
+            result.hadAuthFailure ->
                 if (userInitiated && !requireAutoSync) {
                     SyncOutcome.NotLoggedIn
                 } else {
@@ -213,6 +207,12 @@ class SyncCoordinator(
                         retryable = false,
                     )
                 }
+            result.isFullSuccess -> SyncOutcome.Success
+            result.isPartialSuccess -> SyncOutcome.PartialSuccess(
+                succeeded = result.succeeded,
+                failed = result.failed,
+                summary = result.summary(),
+            )
             result.isTotalFailure -> SyncOutcome.Failed(
                 message = result.summary(),
                 retryable = result.hadRetryableFailure,

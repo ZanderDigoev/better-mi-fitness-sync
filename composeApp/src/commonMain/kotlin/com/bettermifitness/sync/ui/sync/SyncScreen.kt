@@ -51,12 +51,27 @@ import com.bettermifitness.sync.ui.icons.AppIcons
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SyncScreen(viewModel: SyncViewModel, onBack: () -> Unit) {
+fun SyncScreen(
+    viewModel: SyncViewModel,
+    onBack: () -> Unit,
+    onLogout: () -> Unit = {},
+) {
     val state by viewModel.uiState.collectAsState()
 
     val healthName = state.healthServiceName.ifBlank { L10n.string(L10n.healthFallback) }
     val metrics = state.visibleMetrics
     val daysLabel = if (state.rangeDays == 1) L10n.string(L10n.syncLastOneDay) else L10n.stringFmt(L10n.syncLastNDays, state.rangeDays)
+
+    val hasAuthError = state.permissionError?.contains("70016") == true ||
+        state.permissionError?.contains("sign in", ignoreCase = true) == true ||
+        metrics.any { m ->
+            val s = viewModel.stateFor(state.progress, m.key)
+            s is SyncState.Error && (
+                s.message.contains("70016") ||
+                s.message.contains("sign in", ignoreCase = true) ||
+                s.message.contains("rejected by Xiaomi", ignoreCase = true)
+            )
+        }
 
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing,
@@ -78,14 +93,22 @@ fun SyncScreen(viewModel: SyncViewModel, onBack: () -> Unit) {
         bottomBar = {
             StickyCtaBar(modifier = Modifier.navigationBarsPadding()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PrimaryButton(
-                        text = if (state.isSyncing) L10n.string(L10n.homeSyncing) else L10n.string(L10n.syncNow),
-                        onClick = viewModel::startSync,
-                        enabled = state.healthAvailable && metrics.isNotEmpty() && !state.isSyncing,
-                        loading = state.isSyncing,
-                        icon = AppIcons.Sync,
-                    )
-                    if (!state.healthAvailable) {
+                    if (hasAuthError) {
+                        PrimaryButton(
+                            text = L10n.string(L10n.outcomeSignInAgain),
+                            onClick = onLogout,
+                            icon = null,
+                        )
+                    } else {
+                        PrimaryButton(
+                            text = if (state.isSyncing) L10n.string(L10n.homeSyncing) else L10n.string(L10n.syncNow),
+                            onClick = viewModel::startSync,
+                            enabled = state.healthAvailable && metrics.isNotEmpty() && !state.isSyncing,
+                            loading = state.isSyncing,
+                            icon = AppIcons.Sync,
+                        )
+                    }
+                    if (!state.healthAvailable && !hasAuthError) {
                         TextButton(
                             onClick = viewModel::openHealthService,
                             modifier = Modifier.fillMaxWidth(),
@@ -159,6 +182,35 @@ fun SyncScreen(viewModel: SyncViewModel, onBack: () -> Unit) {
                             color = MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.surfaceVariant,
                         )
+                    }
+                }
+            }
+
+            if (hasAuthError) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(14.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        AppIcon(AppIcons.ErrorOutline, null, Modifier.size(24.dp), tint = MaterialTheme.colorScheme.error)
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = L10n.string(L10n.outcomeSignInAgain),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                            Text(
+                                text = "Сессия Xiaomi истекла (код 70016). Нажмите кнопку внизу для входа.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     }
                 }
             }

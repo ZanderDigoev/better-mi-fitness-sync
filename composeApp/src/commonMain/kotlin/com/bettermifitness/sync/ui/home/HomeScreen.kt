@@ -80,7 +80,12 @@ fun HomeScreen(
     val titleName = fullName ?: L10n.string(L10n.homeAccount)
     val canUpdate = state.prefsReady && state.enabledMetricsCount > 0
 
+    val hasAuthError = state.profileError?.contains("70016") == true ||
+        state.profileError?.contains("sign in", ignoreCase = true) == true ||
+        (state.lastSyncIsError && (state.lastSyncDetail.contains("70016") || state.lastSyncDetail.contains("sign in", ignoreCase = true)))
+
     val primaryLabel = when {
+        hasAuthError -> L10n.string(L10n.outcomeSignInAgain)
         !state.prefsReady -> L10n.string(L10n.homeSyncOptions)
         state.healthNeedsAction -> L10n.string(L10n.healthAllowAccess)
         !canUpdate -> L10n.string(L10n.homeOpenSettings)
@@ -114,6 +119,10 @@ fun HomeScreen(
                     text = primaryLabel,
                     onClick = {
                         when {
+                            hasAuthError -> {
+                                viewModel.logout()
+                                onLogout()
+                            }
                             state.healthNeedsAction -> viewModel.openHealthService()
                             !canUpdate -> onSettingsClick()
                             state.isSyncing -> onSyncClick()
@@ -124,7 +133,7 @@ fun HomeScreen(
                         }
                     },
                     loading = state.isSyncing,
-                    icon = if (!canUpdate && !state.healthNeedsAction) null else AppIcons.Sync,
+                    icon = if (hasAuthError || (!canUpdate && !state.healthNeedsAction)) null else AppIcons.Sync,
                 )
             }
         },
@@ -222,6 +231,16 @@ private fun LetterAvatar(letter: String) {
 private data class Banner(val title: String, val detail: String, val error: Boolean)
 
 private fun blockingBanner(state: HomeUiState, healthName: String): Banner? {
+    val hasAuthError = state.profileError?.contains("70016") == true ||
+        state.profileError?.contains("sign in", ignoreCase = true) == true ||
+        (state.lastSyncIsError && (state.lastSyncDetail.contains("70016") || state.lastSyncDetail.contains("sign in", ignoreCase = true)))
+    if (hasAuthError) {
+        return Banner(
+            title = L10n.text(L10n.outcomeSignInAgain),
+            detail = "Сессия Mi Аккаунта истекла (код 70016). Нажмите кнопку внизу для повторного входа.",
+            error = true,
+        )
+    }
     if (state.healthNeedsAction) {
         return Banner(
             title = state.healthStatusTitle.ifBlank {

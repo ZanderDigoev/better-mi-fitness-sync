@@ -145,6 +145,8 @@ class HealthRepository(
                     fetchSemaphore.withPermit {
                         try {
                             fetchAllByTime("heart_rate", from, to)
+                        } catch (e: MiApiException.AuthExpired) {
+                            throw e
                         } catch (_: Exception) {
                             emptyList()
                         }
@@ -156,6 +158,8 @@ class HealthRepository(
                     fetchSemaphore.withPermit {
                         try {
                             fetchAllByTime("single_heart_rate", from, to)
+                        } catch (e: MiApiException.AuthExpired) {
+                            throw e
                         } catch (_: Exception) {
                             emptyList()
                         }
@@ -168,6 +172,8 @@ class HealthRepository(
                         fetchSemaphore.withPermit {
                             api.getLatest("single_heart_rate", limit = 30)
                         }.result?.dataList.orEmpty()
+                    } catch (e: MiApiException.AuthExpired) {
+                        throw e
                     } catch (_: Exception) {
                         emptyList()
                     }

@@ -102,20 +102,33 @@ fun NavGraph() {
                         viewModel = entry.sharedKoinViewModel(navController),
                         onSyncClick = { navController.navigate(Routes.SYNC) },
                         onSettingsClick = { navController.navigate(Routes.SETTINGS) },
-                        onLogout = { auth = AuthBootstrap.LoggedOut },
+                        onLogout = {
+                            sessionManager.clear()
+                            tokenStore.clear()
+                            auth = AuthBootstrap.LoggedOut
+                        },
                     )
                 }
                 composable(Routes.SETTINGS) { entry ->
                     SettingsScreen(
                         viewModel = entry.sharedKoinViewModel(navController),
                         onBack = { navController.popBackStack() },
-                        onLogout = { auth = AuthBootstrap.LoggedOut },
+                        onLogout = {
+                            sessionManager.clear()
+                            tokenStore.clear()
+                            auth = AuthBootstrap.LoggedOut
+                        },
                     )
                 }
                 composable(Routes.SYNC) { entry ->
                     SyncScreen(
                         viewModel = entry.sharedKoinViewModel(navController),
                         onBack = { navController.popBackStack() },
+                        onLogout = {
+                            sessionManager.clear()
+                            tokenStore.clear()
+                            auth = AuthBootstrap.LoggedOut
+                        },
                     )
                 }
             }
