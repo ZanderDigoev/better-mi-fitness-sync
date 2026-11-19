@@ -54,7 +54,16 @@ class AndroidSyncProgressNotifier(
         const val NOTIFICATION_ID = 2001
         private const val AUTO_DISMISS_DELAY_MS = 8000L
         private const val BRAND_ORANGE_HEX = "#FF6B35"
-        private const val PIC_KEY_SYNC = "pic.sync"
+        private const val PIC_KEY_SYNC = "sync_icon"
+    }
+
+    private fun isXiaomi(): Boolean {
+        val m = Build.MANUFACTURER
+        val b = Build.BRAND
+        return m.equals("Xiaomi", ignoreCase = true) ||
+            b.equals("Xiaomi", ignoreCase = true) ||
+            b.equals("POCO", ignoreCase = true) ||
+            b.equals("Redmi", ignoreCase = true)
     }
 
     init {
@@ -110,17 +119,17 @@ class AndroidSyncProgressNotifier(
         isFinished: Boolean = false,
     ) {
         try {
-            if (HyperIslandNotification.isSupported(context)) {
+            if (isXiaomi()) {
                 val icon = Icon.createWithResource(context, iconRes)
                 val pic = HyperPicture(PIC_KEY_SYNC, icon)
-                val island = HyperIslandNotification(context, CHANNEL_ID, text)
+                val island = HyperIslandNotification.Builder(context, "sync_progress", text)
                     .addPicture(pic)
                     .setSmallIslandCircularProgress(
                         PIC_KEY_SYNC,
                         percent,
                         BRAND_ORANGE_HEX,
                         null,
-                        true,
+                        false,
                     )
                     .setBigIslandProgressCircle(
                         PIC_KEY_SYNC,
